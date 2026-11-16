@@ -27,7 +27,7 @@ jobs:
   # ---------------------------------------------------------------------------
   flutter-ios:
     name: Flutter / iOS Simulator
-    runs-on: ${{ vars.IOS_RUNNER || 'macos-15' }}
+    runs-on: ${{ vars.IOS_RUNNER || 'macos-15-intel' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -105,7 +105,7 @@ jobs:
   # ---------------------------------------------------------------------------
   native-ios:
     name: SwiftUI / XcodeGen
-    runs-on: ${{ vars.IOS_RUNNER || 'macos-15' }}
+    runs-on: ${{ vars.IOS_RUNNER || 'macos-15-intel' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -190,4 +190,5 @@ jobs:
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14
+
 

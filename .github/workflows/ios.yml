@@ -1,4 +1,4 @@
-name: iOS
+﻿name: iOS
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
   # ---------------------------------------------------------------------------
   flutter-ios:
     name: Flutter / iOS Simulator
-    runs-on: macos-26
+    runs-on: ${{ vars.IOS_RUNNER || 'macos-15' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -105,7 +105,7 @@ jobs:
   # ---------------------------------------------------------------------------
   native-ios:
     name: SwiftUI / XcodeGen
-    runs-on: macos-26
+    runs-on: ${{ vars.IOS_RUNNER || 'macos-15' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -126,6 +126,7 @@ jobs:
       - name: Build and unit-test
         working-directory: apps/native_app
         run: |
+          mkdir -p build
           xcodebuild test \
             -project NativeLab.xcodeproj \
             -scheme NativeLab \
@@ -189,3 +190,4 @@ jobs:
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14
+

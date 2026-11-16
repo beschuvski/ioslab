@@ -112,11 +112,25 @@ D:\iOSLab\ioslab.cmd ci -Name <你的账号>/ioslab -Watch
 
 ### 交互式 iOS 模拟器（可选）
 
-1. 从 CI 产物下载 `ioslab-native-simulator.zip`（内含 `NativeLab.app`）；
-2. 打开 <https://appetize.io>，上传 zip，选择 iPhone 机型；
+1. 从 CI 产物下载 `native-ios.zip`（内含 `NativeLab.app` 与模拟器截图）；
+2. 打开 <https://appetize.io>，上传 `.app`（zip 后），选择 iPhone 机型；
 3. 浏览器里即可点按运行（免费额度 30 分钟/月，单次会话 3 分钟）。
 
 若配置了 `APPETIZE_API_KEY` secret，可在 Actions 页面手动触发并勾选 `appetize` 自动上传。
+
+### 下载 CI 产物（截图 / .app）
+
+Actions → 对应 run → 页面底部 **Artifacts**：
+
+- `flutter-ios.zip`：`screenshots/flutter-light.png`、`flutter-dark.png`、`app/ioslab-flutter-simulator.zip`
+- `native-ios.zip`：`screenshots/native-light.png`、`native-dark.png`、`app/ioslab-native-simulator.zip`、`test-results/TestResults.xcresult`
+
+产物保留 14 天。命令行下载需要 token（未认证返回 401）：
+
+```bat
+set GITHUB_TOKEN=ghp_xxx
+D:\iOSLab\ioslab.cmd watch -Name beschuvski/ioslab -Download
+```
 
 ---
 

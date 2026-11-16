@@ -185,38 +185,37 @@ D:\iOSLab\
 | A4 | 单元 + Widget 测试全绿 | `flutter test`（6 个） | ✅ |
 | A5 | 本地 1179×2556 截图 | `ioslab.cmd shot` | ✅ |
 | A6 | workflow 结构校验 | `validate_workflows.dart` | ✅ |
-| A7 | CI 定义固定版本、可运行 | workflow 内容 + 首次 push | 🟡 定义已验证；实跑被 GitHub macOS runner 容量阻塞（见下） |
+| A7 | CI 定义固定版本、可运行 | workflow 内容 + 首次 push | ✅ run #7 双 job 全绿（`macos-15-intel`，Xcode 16.4） |
 | A8 | 回滚 `-WhatIf` 完整 | `09-uninstall.ps1 -WhatIf` | ✅ |
 
-> A7 的"实跑"已经推到 `beschuvski/ioslab`，连续 3 次都在排队约 15 分钟后被 GitHub
-> 以 `cancelled` 结束、`runner` 为空、`steps=0` —— 这是 GitHub 托管 macOS runner 的
-> 容量问题（annotation: "The job was not acquired by Runner of type hosted"），不是
-> 流水线或代码错误。已分别尝试 `macos-26`、`macos-15`、`macos-15-intel` 三个池。
-> 社区同类报告：<https://github.com/orgs/community/discussions/212075>、
-> <https://github.com/orgs/community/discussions/211885>。
-> 容量恢复后执行 `D:\iOSLab\ioslab.cmd watch -Name beschuvski/ioslab` 即可继续观察。
+> **A7 已实跑通过**：<https://github.com/beschuvski/ioslab/actions/runs/43963522330>
+> （2026-11-17 06:07 完成，两个 job 全绿）。`flutter-ios` 产物 49.8 MB（Simulator 亮/暗截图 +
+> `.app` zip），`native-ios` 产物 5.9 MB（截图 + `.app` + `xcresult`）。
+>
+> 途中修复的两个真实问题，记录备查：
+> 1. `.gitignore` 的 `*.xcodeproj/` 把 Flutter 的 `ios/Runner.xcodeproj` 也忽略了，macOS 上
+>    `flutter build ios` 报 "Expected ios/Runner.xcodeproj but this file is missing" —— 已把
+>    忽略规则收窄到 `apps/native_app/`，并提交 Flutter 的 Xcode 工程。
+> 2. `ContentView.swift` 里 `withAnimation { model.runNextCheck() }` 返回 `Bool`，与 Button
+>    action 的 `Void` 冲突（Xcode 报 "conflicting arguments to generic parameter 'Result'"）——
+>    改为 `_ = model.runNextCheck()`。
+>
+> 另外，`.github/workflows/ios.yml` 现在会把构建失败的日志尾部写成 check-run annotation，
+> 未认证也能通过 API 读到，排障不必依赖 token。
 
 ### 已完成的部分
 
 GitHub 仓库 **`beschuvski/ioslab`** 已建好（public），SSH 公钥已注册，代码已推送
 （`main`，含 4 个 commit）。`ci.ps1` 已验证可直接 push。
 
-### 仍需你完成的一件事
+### 剩下的可选项
 
-等 GitHub macOS runner 有容量时，重新触发一次并观察：
+CI 已经全绿，代码、构建、模拟器、截图、产物都在跑。可选的后续：
 
-```bat
-:: 触发新一次运行（空提交）
-cd /d D:\iOSLab\projects\ioslab
-git commit --allow-empty -m "chore: retry CI"
-D:\iOSLab\ioslab.cmd ci -Name beschuvski/ioslab
-
-:: 观察（60 秒一次，避免触发未认证 API 限流）
-D:\iOSLab\ioslab.cmd watch -Name beschuvski/ioslab
-```
-
-如果有 PAT，`watch -Download` 可以把 Simulator 截图和 `.app` 直接拉到
-`projects\ioslab\artifacts\ci\`；没有 token 也能 push 和观察状态，只是不能下载产物。
+1. **下载真实 Simulator 截图**：Actions → run #7 → Artifacts → `flutter-ios` / `native-ios`
+   （命令行下载需要 `GITHUB_TOKEN`，未认证会 401）。
+2. **Appetize 交互演示**：把 `ioslab-native-simulator.zip` 上传到 <https://appetize.io>。
+3. **换 runner 池**：仓库 Settings → Variables 建 `IOS_RUNNER`（如 `macos-26`），无需改代码。
 
 ---
 

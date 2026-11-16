@@ -68,18 +68,16 @@ git commit && ioslab.cmd ci ← 云端真机（Simulator）验证
 
 ### 在编辑器里打开
 
-工程目录：`D:\iOSLab\projects\ioslab`（任何编辑器都可以）。
-
-本机**未安装 VS Code**：安装包（272 MB）在本网络下载到 43% 时被 CDN 重置，
-为避免把时间耗在重试上没有强装。网络恢复后运行：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File D:\iOSLab\scripts\03-vscode.ps1
+```bat
+code D:\iOSLab\projects\ioslab
 ```
 
-脚本会断点续传、校验 Authenticode 签名、安装 `Dart-Code.dart-code` 与
-`Dart-Code.flutter`，并写入指向 `D:\iOSLab\flutter` 的用户设置。
-仓库里已有 `.vscode/settings.json` 与 `extensions.json`，装好即用。
+已安装 **VS Code 1.146.0**（用户级），扩展 `dart-code.dart-code`、`dart-code.flutter`
+已装，用户设置已把 Flutter SDK 指向 `D:\iOSLab\flutter`，保存即格式化。
+仓库里还有 `.vscode/settings.json` 与 `extensions.json`，换机器也能保持一致。
+
+> 若以后需要重装/升级：`powershell -NoProfile -ExecutionPolicy Bypass -File D:\iOSLab\scripts\03-vscode.ps1`
+> （脚本带 `curl -C -` 断点续传与 Authenticode 签名校验，可反复执行）。
 
 ### 本地截图能代替 iOS Simulator 吗
 

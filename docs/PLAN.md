@@ -66,15 +66,14 @@ Windows 上不存在合法的"iOS 模拟器软件"。因此本方案不追求"�
 |---|---|---|---|
 | Flutter SDK | **3.50.0**（Dart 3.14.0，2026-11-11 stable） | 官方 zip + SHA-256 校验，CN 镜像 | `D:\iOSLab\flutter` |
 | Git for Windows | 2.56.1（PortableGit） | TUNA 镜像 + GitHub API 摘要校验 | `D:\iOSLab\tools\git` |
-| VS Code | 1.146.0（user setup） | 官方 CDN + Authenticode 校验 | ⚠️ **未安装**（见下方说明），脚本可断点续传：`scripts\03-vscode.ps1` |
+| VS Code | **1.146.0**（user setup，已装） | 官方 CDN + Authenticode 校验 + 断点续传 | `%LOCALAPPDATA%\Programs\Microsoft VS Code` |
 | 浏览器 | Edge 157（已存在） | — | 系统 |
 | iOS 构建环境 | `macos-26`（arm64, Xcode 27），回退 `macos-15` | GitHub Actions | 云端 |
 
-> **VS Code 状态**：安装脚本、签名校验、扩展清单都已就绪，但本机到 Microsoft CDN 的
-> 实际吞吐在下载过程中从 ~450 KB/s 掉到 ~3 KB/s 并多次连接重置（272 MB 的安装包），
-> 因此**没有强行装完**。`scripts\03-vscode.ps1` 支持 `curl -C -` 断点续传，网络恢复后
-> 直接重跑即可；不装 VS Code 也不影响 `check / preview / shot / verify` 全部功能
-> （可用任意编辑器打开 `D:\iOSLab\projects\ioslab`）。
+> **VS Code 状态**：已安装 1.146.0，签名 `CN=Microsoft Corporation` 校验通过，
+> 扩展 `dart-code.dart-code`、`dart-code.flutter` 已装，用户设置指向
+> `D:\iOSLab\flutter`。安装过程中 Microsoft CDN 多次限速/重置，脚本已改为
+> `curl -C -` 断点续传 + 每次重试前校验 Authenticode 签名，最终一次跑通。
 
 用户环境变量（可回滚）：
 
@@ -189,17 +188,25 @@ D:\iOSLab\
 | A7 | CI 定义固定版本、可运行 | workflow 内容 + 首次 push | 🟡 定义已验证，实跑需 GitHub 凭据 |
 | A8 | 回滚 `-WhatIf` 完整 | `09-uninstall.ps1 -WhatIf` | ✅ |
 
-> A7 的"实跑"需要把你的 SSH 公钥加到 GitHub（或提供 token）。这是唯一需要人工介入的环节，
+> A7 的"实跑"需要把 SSH 公钥加到 GitHub（或提供 token）。这是唯一需要人工介入的环节，
 > 原因见 5.4：本网络无法打开 github.com 网页。
->
-> VS Code 属于可选项，未装完（见第 3 节说明），不影响 A1–A8 任何一项。
 
-### 仍需你完成的两件事（都不阻塞本地开发）
+### 仍需你完成的一件事
 
-1. **VS Code**（可选）：网络好时运行 `powershell -ExecutionPolicy Bypass -File D:\iOSLab\scripts\03-vscode.ps1`，
-   会从断点续传并安装 Dart/Flutter 扩展。
-2. **首次 CI 实跑**：`D:\iOSLab\ioslab.cmd ci -Name <你的账号>/<仓库名> -PrepareOnly`，
-   把打印的 SSH 公钥加到 GitHub，再运行 `... ci -Name <你的账号>/<仓库名>`（有 token 可加 `-Watch`）。
+**首次 CI 实跑**：在 GitHub 网页端建一个空仓库（建议名为 `ioslab`，公开仓库可免费使用
+macOS runner），并把下面这行公钥加到 Settings → SSH and GPG keys：
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDlpIWQ2q+4yWy73QFTavXJht5PZJtv6GrhvifDxkLE4 ioslab@LAPTOP-6KEPMANN
+```
+
+然后运行：
+
+```bat
+D:\iOSLab\ioslab.cmd ci -Name <你的账号>/ioslab -Watch
+```
+
+`-Watch` 需要 `GITHUB_TOKEN`（repo + workflow）；只 push 不需要 token。
 
 ---
 

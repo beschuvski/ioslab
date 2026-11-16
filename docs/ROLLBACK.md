@@ -17,7 +17,7 @@
 | 3 | 用户环境变量 `FLUTTER_STORAGE_BASE_URL` | 新增 = `https://storage.flutter-io.cn` | 恢复快照值 |
 | 4 | 用户环境变量 `PUB_HOSTED_URL` | 新增 = `https://pub.flutter-io.cn` | 恢复快照值 |
 | 5 | 用户 `PATH` | 追加 `D:\iOSLab\flutter\bin`、`D:\iOSLab\tools\git\cmd` | 精确删除这两条，保留其它条目 |
-| 6 | VS Code（user setup） | 安装到 `%LOCALAPPDATA%\Programs\Microsoft VS Code`，并向用户 PATH 追加 `...\bin` | 静默卸载 → 删除残留目录 → 移除该 PATH 条目 |
+| 6 | VS Code（user setup） | 已安装 1.146.0 到 `%LOCALAPPDATA%\Programs\Microsoft VS Code`，并向用户 PATH 追加 `...\bin` 与 `...\bin\copilot-shim` 两条 | 静默卸载 → 删除残留目录 → 移除这两条 PATH 条目 |
 | 7 | VS Code 扩展 | `Dart-Code.dart-code`、`Dart-Code.flutter` 写入 `%USERPROFILE%\.vscode\extensions` | 若该目录安装前不存在 → 整目录删除 |
 | 8 | git 全局配置 | `core.longpaths`、`init.defaultBranch`、`core.quotepath`（写入 `%USERPROFILE%\.gitconfig`） | 若 `.gitconfig` 安装前不存在 → 删除文件；否则 `git config --global --unset-all` 这三个键 |
 | 9 | `%USERPROFILE%\.flutter_settings` | Flutter 首次运行可能生成 | 仅当安装前不存在时删除 |

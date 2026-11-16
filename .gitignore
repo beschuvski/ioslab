@@ -1,0 +1,27 @@
+# --- Flutter / Dart ---------------------------------------------------------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# --- Xcode / Swift ----------------------------------------------------------
+# The Xcode project is generated from project.yml by XcodeGen; never commit it.
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+*.xcresult
+xcuserdata/
+
+# --- CI artifacts -----------------------------------------------------------
+artifacts/
+*.app.zip
+
+# --- OS / editors -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

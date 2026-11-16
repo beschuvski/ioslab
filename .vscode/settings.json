@@ -1,0 +1,14 @@
+{
+  "dart.flutterSdkPath": "D:\\iOSLab\\flutter",
+  "dart.lineLength": 100,
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "telemetry.telemetryLevel": "off",
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/build": true,
+    "**/*.xcodeproj": true
+  }
+}

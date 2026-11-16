@@ -1,0 +1,191 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      appetize:
+        description: "Upload the native Simulator build to Appetize.io"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.50.0"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Flutter: analyse, test, build for the iOS Simulator, run it, screenshot it.
+  # ---------------------------------------------------------------------------
+  flutter-ios:
+    name: Flutter / iOS Simulator
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Toolchain
+        run: |
+          flutter --version
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Resolve packages
+        working-directory: apps/flutter_app
+        run: flutter pub get
+
+      - name: Format check
+        working-directory: apps/flutter_app
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        working-directory: apps/flutter_app
+        run: flutter analyze --fatal-infos
+
+      - name: Unit and widget tests
+        working-directory: apps/flutter_app
+        run: flutter test --reporter expanded
+
+      - name: Build for iOS Simulator
+        working-directory: apps/flutter_app
+        run: flutter build ios --simulator --debug
+
+      - name: Boot simulator, install, screenshot
+        run: |
+          bash scripts/ios-sim.sh run \
+            --app apps/flutter_app/build/ios/iphonesimulator/Runner.app \
+            --bundle com.ioslab.ioslabApp \
+            --out artifacts/screenshots \
+            --name flutter
+
+      - name: Package simulator build
+        run: |
+          mkdir -p artifacts/app
+          ditto -c -k --keepParent \
+            apps/flutter_app/build/ios/iphonesimulator/Runner.app \
+            artifacts/app/ioslab-flutter-simulator.zip
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Flutter / iOS Simulator"
+            echo ""
+            echo "- Flutter: \`${{ env.FLUTTER_VERSION }}\`"
+            echo "- Xcode: \`$(xcodebuild -version | head -1)\`"
+            echo "- Artifacts: screenshots (light + dark), simulator .app zip"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flutter-ios
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Native SwiftUI: project generated from project.yml by XcodeGen, then built,
+  # unit-tested, run and screenshotted on the same simulator stack.
+  # ---------------------------------------------------------------------------
+  native-ios:
+    name: SwiftUI / XcodeGen
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: apps/native_app
+        run: |
+          xcodegen generate
+          xcodebuild -list -project NativeLab.xcodeproj
+
+      - name: Select simulator
+        id: sim
+        run: echo "udid=$(bash scripts/ios-sim.sh resolve)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and unit-test
+        working-directory: apps/native_app
+        run: |
+          xcodebuild test \
+            -project NativeLab.xcodeproj \
+            -scheme NativeLab \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build \
+            -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Screenshot the running app
+        run: |
+          bash scripts/ios-sim.sh run \
+            --app apps/native_app/build/Build/Products/Debug-iphonesimulator/NativeLab.app \
+            --bundle com.ioslab.nativelab \
+            --out artifacts/screenshots \
+            --name native
+
+      - name: Package simulator build
+        run: |
+          mkdir -p artifacts/app
+          ditto -c -k --keepParent \
+            apps/native_app/build/Build/Products/Debug-iphonesimulator/NativeLab.app \
+            artifacts/app/ioslab-native-simulator.zip
+          mkdir -p artifacts/test-results
+          cp -R apps/native_app/build/TestResults.xcresult artifacts/test-results/ 2>/dev/null || true
+
+      - name: Upload to Appetize.io (optional)
+        if: ${{ inputs.appetize }}
+        continue-on-error: true
+        env:
+          APPETIZE_API_KEY: ${{ secrets.APPETIZE_API_KEY }}
+        run: |
+          if [ -z "${APPETIZE_API_KEY:-}" ]; then
+            echo "APPETIZE_API_KEY is not configured; skipping upload."
+            exit 0
+          fi
+          ditto -c -k --keepParent \
+            apps/native_app/build/Build/Products/Debug-iphonesimulator/NativeLab.app \
+            /tmp/ioslab.zip
+          curl -sS -X POST https://api.appetize.io/v1/apps \
+            -H "X-API-KEY: ${APPETIZE_API_KEY}" \
+            -F "file=@/tmp/ioslab.zip" \
+            -F "platform=ios" \
+            -o /tmp/appetize.json
+          echo "Appetize response: $(cat /tmp/appetize.json)"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### SwiftUI / XcodeGen"
+            echo ""
+            echo "- Xcode: \`$(xcodebuild -version | head -1)\`"
+            echo "- Simulator: \`${{ steps.sim.outputs.udid }}\`"
+            echo "- Artifacts: screenshots (light + dark), .app zip, xcresult"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-ios
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14

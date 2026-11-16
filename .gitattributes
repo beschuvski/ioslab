@@ -1,0 +1,16 @@
+# Source files are authored on Windows and built on macOS. Force LF in the
+# repository so shell scripts, Swift sources and project.yml behave identically
+# on both platforms.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.zip binary
+*.xcresult binary
+
+*.sh text eol=lf
+*.swift text eol=lf
+*.dart text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf

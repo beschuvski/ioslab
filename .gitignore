@@ -8,9 +8,10 @@ build/
 .flutter-plugins-dependencies
 
 # --- Xcode / Swift ----------------------------------------------------------
-# The Xcode project is generated from project.yml by XcodeGen; never commit it.
-*.xcodeproj/
-*.xcworkspace/
+# Only the XcodeGen-generated project for the native sample is ignored.
+# Flutter's ios/Runner.xcodeproj must be committed: the macOS builder needs it.
+/apps/native_app/*.xcodeproj/
+/apps/native_app/*.xcworkspace/
 DerivedData/
 *.xcresult
 xcuserdata/

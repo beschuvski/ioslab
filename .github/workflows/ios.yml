@@ -70,10 +70,9 @@ jobs:
           flutter build ios --simulator --debug 2>&1 | tee build-ios.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            body=$(tail -n 60 build-ios.log | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')
+            errs=$(grep -nE "Error:|error:|Exception|No such file|not found|requires" build-ios.log | tail -n 25 | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')
+            body=${errs:-$(tail -n 60 build-ios.log | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')}
             echo "::error::flutter build ios failed (exit $code)%0A$body"
-            doctor=$(flutter doctor -v 2>&1 | tail -n 40 | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')
-            echo "::error::flutter doctor (tail)%0A$doctor"
           fi
           exit "$code"
 
@@ -151,9 +150,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            body=$(tail -n 80 build/xcodebuild.log | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')
+            errs=$(grep -nE "error:|fatal error:|Undefined symbols|The following build commands failed|Testing failed|BUILD FAILED|Command .* failed" build/xcodebuild.log | tail -n 25 | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')
+            body=${errs:-$(tail -n 60 build/xcodebuild.log | sed 's/%/%25/g' | tr -d '\r' | awk 'NF{printf "%s%%0A", $0}')}
             echo "::error::xcodebuild test failed (exit $code)%0A$body"
-            echo "::error::xcodebuild $(xcodebuild -version | head -1) / destination ${{ steps.sim.outputs.udid }}"
           fi
           exit "$code"
 

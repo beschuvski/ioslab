@@ -102,7 +102,7 @@ struct ContentView: View {
     private var footer: some View {
         VStack(spacing: 12) {
             Button {
-                withAnimation(.snappy) { model.runNextCheck() }
+                withAnimation(.snappy) { _ = model.runNextCheck() }
             } label: {
                 Text("Run next check")
                     .font(.system(size: 16, weight: .semibold))

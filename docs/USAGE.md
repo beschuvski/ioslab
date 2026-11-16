@@ -156,7 +156,21 @@ Flutter 3.50 起 Cupertino 拆到 `package:cupertino_ui/cupertino_ui.dart`；
 
 **CI 上 iOS 构建失败**
 先看 `flutter-ios` job 里 `Build for iOS Simulator` 步骤；常见原因是依赖需要 CocoaPods
-或 Xcode 版本更新。把 `ios.yml` 的 `runs-on` 换成 `macos-15` 可回退一档。
+或 Xcode 版本更新。把 `ios.yml` 的 `runs-on` 换成 `macos-15` / `macos-26` 可换池重试。
+
+**CI 一直 queued，约 15 分钟后变成 cancelled、0 个 step**
+这是 GitHub 托管 macOS runner 的**容量问题**，不是代码或配置错误：arm64 池在高峰时段经常
+分配不到机器，GitHub 等约 15 分钟后放弃并 cancel，annotation 为
+"The job was not acquired by Runner of type hosted"。这不是 `timeout-minutes`，也无法通过
+改 workflow 延长。处理办法：
+
+1. 直接 `git commit --allow-empty -m retry` 再推一次，换个时间点重试；
+2. 换池：把 `runs-on` 改成 `macos-15-intel`（Intel，默认值）或 `macos-15` / `macos-26`（arm64）；
+3. 在仓库 Settings → Variables 里建 `IOS_RUNNER`，以后不改代码就能换池；
+4. 持续失败的话，用 Codemagic / Bitrise 的免费额度，或自托管 Mac runner。
+
+参考社区同类报告：<https://github.com/orgs/community/discussions/212075>、
+<https://github.com/orgs/community/discussions/211885>。
 
 ---
 

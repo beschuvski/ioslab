@@ -17,7 +17,7 @@ Windows 上不存在合法的"iOS 模拟器软件"。因此本方案不追求"�
 | 通道 | 位置 | 能力 | 延迟 | 成本 |
 |---|---|---|---|---|
 | **A. 本地即时反馈** | 本机 Windows | 代码编辑 / 静态分析 / 单元 + Widget 测试 / 真字体的 iPhone 视口预览与截图 | 秒级 | 0 |
-| **B. 真实 iOS 构建 + Simulator** | GitHub Actions `macos-26`（Apple Silicon，Xcode 27） | `xcodebuild` / CocoaPods / Simulator 启动、UI 测试、截图、`.app` 产物 | 3–6 分钟 | 公开仓库免费 |
+| **B. 真实 iOS 构建 + Simulator** | GitHub Actions `macos-15-intel`（可用变量切 arm64 池） | `xcodebuild` / CocoaPods / Simulator 启动、UI 测试、截图、`.app` 产物 | 3–6 分钟（排队另计） | 公开仓库免费 |
 | **C. 可交互远程模拟器** | Appetize.io | 浏览器里点按真实 iOS Simulator 运行已构建的 `.app` | 秒级 | 免费额度 30 分钟/月 |
 
 外加**升级路径**（不默认启用，需要付费账号）：MacinCloud / MacStadium / AWS EC2 Mac 远程 Mac，
@@ -68,7 +68,7 @@ Windows 上不存在合法的"iOS 模拟器软件"。因此本方案不追求"�
 | Git for Windows | 2.56.1（PortableGit） | TUNA 镜像 + GitHub API 摘要校验 | `D:\iOSLab\tools\git` |
 | VS Code | **1.146.0**（user setup，已装） | 官方 CDN + Authenticode 校验 + 断点续传 | `%LOCALAPPDATA%\Programs\Microsoft VS Code` |
 | 浏览器 | Edge 157（已存在） | — | 系统 |
-| iOS 构建环境 | `macos-26`（arm64, Xcode 27），回退 `macos-15` | GitHub Actions | 云端 |
+| iOS 构建环境 | 默认 `macos-15-intel`；`macos-15`/`macos-26`（arm64）可用仓库变量 `IOS_RUNNER` 切换 | GitHub Actions | 云端 |
 
 > **VS Code 状态**：已安装 1.146.0，签名 `CN=Microsoft Corporation` 校验通过，
 > 扩展 `dart-code.dart-code`、`dart-code.flutter` 已装，用户设置指向
@@ -129,10 +129,10 @@ D:\iOSLab\
 
 `.github/workflows/ios.yml`，两个并行 job：
 
-1. **flutter-ios**：`macos-26` → Flutter 3.50.0（cache）→ `pub get` → format → analyze → test →
+1. **flutter-ios**：`macos-15`（或 `IOS_RUNNER` 指定）→ Flutter 3.50.0（cache）→ `pub get` → format → analyze → test →
    `flutter build ios --simulator` → 动态选 iPhone 模拟器 → `simctl boot/install/launch` →
    状态栏归位（9:41/满电）→ 亮/暗两张截图 → 产物上传。
-2. **native-ios**：`macos-26` → `brew install xcodegen` → `xcodegen generate` →
+2. **native-ios**：同一 runner → `brew install xcodegen` → `xcodegen generate` →
    `xcodebuild test` → 截图 → `.app`、`xcresult` 上传。
 
 设计要点：
@@ -185,28 +185,38 @@ D:\iOSLab\
 | A4 | 单元 + Widget 测试全绿 | `flutter test`（6 个） | ✅ |
 | A5 | 本地 1179×2556 截图 | `ioslab.cmd shot` | ✅ |
 | A6 | workflow 结构校验 | `validate_workflows.dart` | ✅ |
-| A7 | CI 定义固定版本、可运行 | workflow 内容 + 首次 push | 🟡 定义已验证，实跑需 GitHub 凭据 |
+| A7 | CI 定义固定版本、可运行 | workflow 内容 + 首次 push | 🟡 定义已验证；实跑被 GitHub macOS runner 容量阻塞（见下） |
 | A8 | 回滚 `-WhatIf` 完整 | `09-uninstall.ps1 -WhatIf` | ✅ |
 
-> A7 的"实跑"需要把 SSH 公钥加到 GitHub（或提供 token）。这是唯一需要人工介入的环节，
-> 原因见 5.4：本网络无法打开 github.com 网页。
+> A7 的"实跑"已经推到 `beschuvski/ioslab`，连续 3 次都在排队约 15 分钟后被 GitHub
+> 以 `cancelled` 结束、`runner` 为空、`steps=0` —— 这是 GitHub 托管 macOS runner 的
+> 容量问题（annotation: "The job was not acquired by Runner of type hosted"），不是
+> 流水线或代码错误。已分别尝试 `macos-26`、`macos-15`、`macos-15-intel` 三个池。
+> 社区同类报告：<https://github.com/orgs/community/discussions/212075>、
+> <https://github.com/orgs/community/discussions/211885>。
+> 容量恢复后执行 `D:\iOSLab\ioslab.cmd watch -Name beschuvski/ioslab` 即可继续观察。
+
+### 已完成的部分
+
+GitHub 仓库 **`beschuvski/ioslab`** 已建好（public），SSH 公钥已注册，代码已推送
+（`main`，含 4 个 commit）。`ci.ps1` 已验证可直接 push。
 
 ### 仍需你完成的一件事
 
-**首次 CI 实跑**：在 GitHub 网页端建一个空仓库（建议名为 `ioslab`，公开仓库可免费使用
-macOS runner），并把下面这行公钥加到 Settings → SSH and GPG keys：
-
-```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDlpIWQ2q+4yWy73QFTavXJht5PZJtv6GrhvifDxkLE4 ioslab@LAPTOP-6KEPMANN
-```
-
-然后运行：
+等 GitHub macOS runner 有容量时，重新触发一次并观察：
 
 ```bat
-D:\iOSLab\ioslab.cmd ci -Name <你的账号>/ioslab -Watch
+:: 触发新一次运行（空提交）
+cd /d D:\iOSLab\projects\ioslab
+git commit --allow-empty -m "chore: retry CI"
+D:\iOSLab\ioslab.cmd ci -Name beschuvski/ioslab
+
+:: 观察（60 秒一次，避免触发未认证 API 限流）
+D:\iOSLab\ioslab.cmd watch -Name beschuvski/ioslab
 ```
 
-`-Watch` 需要 `GITHUB_TOKEN`（repo + workflow）；只 push 不需要 token。
+如果有 PAT，`watch -Download` 可以把 Simulator 截图和 `.app` 直接拉到
+`projects\ioslab\artifacts\ci\`；没有 token 也能 push 和观察状态，只是不能下载产物。
 
 ---
 
@@ -216,6 +226,7 @@ D:\iOSLab\ioslab.cmd ci -Name <你的账号>/ioslab -Watch
 |---|---|---|
 | `storage.googleapis.com` 不通 | 装不上 Flutter | 官方 CN 镜像 + 官方 SHA-256（实测 40 MB/s） |
 | `github.com` 网页不通 | 无法用 gh/网页建仓 | 走 SSH + REST API；一次性配置在其它设备完成 |
+| GitHub macOS runner 容量不足 | 排队约 15 分钟后被 cancelled（0 step） | 换池（`IOS_RUNNER` 变量）+ 稍后重试；或用 Codemagic/Bitrise 免费额度 |
 | GitHub 发布资产 CDN 慢/断 | 装 gh、actionlint 失败 | 不装它们，用 git + Dart 校验器替代 |
 | 非管理员 | 无法系统级安装 | 全用户态便携安装 |
 | 8 GB 内存 | 本地并行构建慢 | 本地只跑 analyze/test/预览；重活给 CI |
@@ -249,3 +260,7 @@ D:\iOSLab\ioslab.cmd ci -Name <你的账号>/ioslab -Watch
 - macOS 虚拟化许可边界：<https://expo.dev/articles/testing-and-previewing/test-ios-app-without-mac>
 - XcodeGen：<https://github.com/yonaskolb/XcodeGen>
 - Chrome DevTools Protocol（截图与设备模拟）：<https://chromedevtools.github.io/devtools-protocol/>
+
+
+
+

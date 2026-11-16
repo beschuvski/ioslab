@@ -45,6 +45,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ioslab.nativelab.tests
         GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NativeLab.app/NativeLab"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 
 schemes:
   NativeLab:
